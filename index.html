@@ -1,0 +1,496 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>RGB Registration</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@300;400;500&display=swap" rel="stylesheet">
+    <style>
+        @font-face {
+            font-family: 'PiazzollaCMYK-Red';
+            src: url('fonts/PiazzollaCMYK-Magenta.woff2') format('woff2');
+        }
+        
+        @font-face {
+            font-family: 'PiazzollaCMYK-Green';
+            src: url('fonts/PiazzollaCMYK-Yellow.woff2') format('woff2');
+        }
+        
+        @font-face {
+            font-family: 'PiazzollaCMYK-Blue';
+            src: url('fonts/PiazzollaCMYK-Cyan.woff2') format('woff2');
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            background: #000;
+            width: 100vw;
+            height: 100vh;
+            overflow: hidden;
+            font-family: 'IBM Plex Mono', monospace;
+        }
+
+        #container {
+            position: relative;
+            width: 100%;
+            height: 100%;
+        }
+
+        .layer {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            font-size: 20vw;
+            cursor: move;
+            user-select: none;
+            mix-blend-mode: lighten;
+            font-weight: normal;
+            line-height: 1;
+            white-space: nowrap;
+            display: inline-block;
+        }
+
+        .text-wrapper {
+            position: relative;
+            display: inline-block;
+        }
+
+        #red-layer {
+            font-family: 'PiazzollaCMYK-Red', serif;
+            color: #ff0000;
+        }
+
+        #green-layer {
+            font-family: 'PiazzollaCMYK-Green', serif;
+            color: #00ff00;
+        }
+
+        #blue-layer {
+            font-family: 'PiazzollaCMYK-Blue', serif;
+            color: #0000ff;
+        }
+
+        #alignment-display {
+            position: fixed;
+            bottom: 40px;
+            left: 50%;
+            transform: translateX(-50%);
+            color: #fff;
+            font-size: 14px;
+            font-weight: 300;
+            letter-spacing: 0.1em;
+            text-transform: uppercase;
+            z-index: 1000;
+            pointer-events: none;
+            opacity: 0.7;
+            transition: opacity 0.3s;
+            text-align: center;
+            line-height: 0.7;
+        }
+
+        #alignment-display.perfect {
+            opacity: 1;
+            font-weight: 500;
+        }
+
+        .instructions {
+            color: #fff;
+            display: block;
+        }
+
+        /* Registration marks on each layer */
+        .registration-marks {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: calc(100% + 1.5em);
+            height: calc(100% + 1.5em);
+            pointer-events: none;
+        }
+
+        .reg-mark {
+            position: absolute;
+            width: 30px;
+            height: 30px;
+        }
+
+        .reg-mark::before,
+        .reg-mark::after {
+            content: '';
+            position: absolute;
+            background: currentColor;
+        }
+
+        .reg-mark::before {
+            width: 2px;
+            height: 100%;
+            left: 50%;
+            transform: translateX(-50%);
+        }
+
+        .reg-mark::after {
+            height: 2px;
+            width: 100%;
+            top: 50%;
+            transform: translateY(-50%);
+        }
+
+        /* Position registration marks at corners of text bounding box */
+        .reg-mark.top-left {
+            top: 0;
+            left: 0;
+        }
+
+        .reg-mark.top-right {
+            top: 0;
+            right: 0;
+        }
+
+        .reg-mark.bottom-left {
+            bottom: 0;
+            left: 0;
+        }
+
+        .reg-mark.bottom-right {
+            bottom: 0;
+            right: 0;
+        }
+
+        /* Add circle to registration marks */
+        .reg-mark .circle {
+            position: absolute;
+            width: 20px;
+            height: 20px;
+            border: 2px solid currentColor;
+            border-radius: 50%;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+        }
+
+        /* Color labels on edges */
+        .color-label {
+            position: fixed;
+            font-size: 11px;
+            letter-spacing: 0.1em;
+            text-transform: uppercase;
+            font-weight: 400;
+            pointer-events: none;
+            opacity: 1;
+            z-index: 999;
+            font-family: 'IBM Plex Mono', monospace;
+        }
+
+        #red-label {
+            color: #ff0000;
+            top: 35px;
+            right: 35px;
+        }
+
+        #green-label {
+            color: #00ff00;
+            bottom: 35px;
+            left: 35px;
+        }
+
+        #blue-label {
+            color: #0000ff;
+            bottom: 35px;
+            right: 35px;
+        }
+
+        /* Corner frame elements */
+        .corner {
+            position: fixed;
+            width: 60px;
+            height: 60px;
+            pointer-events: none;
+            opacity: 0.3;
+        }
+
+        .corner::before,
+        .corner::after {
+            content: '';
+            position: absolute;
+            background: #fff;
+        }
+
+        .corner.top-left {
+            top: 20px;
+            left: 20px;
+        }
+
+        .corner.top-left::before {
+            width: 2px;
+            height: 60px;
+            left: 0;
+            top: 0;
+        }
+
+        .corner.top-left::after {
+            width: 60px;
+            height: 2px;
+            left: 0;
+            top: 0;
+        }
+
+        .corner.top-right {
+            top: 20px;
+            right: 20px;
+        }
+
+        .corner.top-right::before {
+            width: 2px;
+            height: 60px;
+            right: 0;
+            top: 0;
+        }
+
+        .corner.top-right::after {
+            width: 60px;
+            height: 2px;
+            right: 0;
+            top: 0;
+        }
+
+        .corner.bottom-left {
+            bottom: 20px;
+            left: 20px;
+        }
+
+        .corner.bottom-left::before {
+            width: 2px;
+            height: 60px;
+            left: 0;
+            bottom: 0;
+        }
+
+        .corner.bottom-left::after {
+            width: 60px;
+            height: 2px;
+            left: 0;
+            bottom: 0;
+        }
+
+        .corner.bottom-right {
+            bottom: 20px;
+            right: 20px;
+        }
+
+        .corner.bottom-right::before {
+            width: 2px;
+            height: 60px;
+            right: 0;
+            bottom: 0;
+        }
+
+        .corner.bottom-right::after {
+            width: 60px;
+            height: 2px;
+            right: 0;
+            bottom: 0;
+        }
+
+        /* Filename label */
+        #filename {
+            position: fixed;
+            top: 35px;
+            left: 35px;
+            color: #fff;
+            font-size: 11px;
+            font-weight: 400;
+            letter-spacing: 0.02em;
+            opacity: 1;
+            z-index: 1000;
+            pointer-events: none;
+            font-family: 'IBM Plex Mono', monospace;
+        }
+    </style>
+</head>
+<body>
+    <div id="container">
+        <!-- Filename label -->
+        <div id="filename">NewlyFormed_Percent_Fall2025.html</div>
+
+        <!-- Corner frames -->
+        <div class="corner top-left"></div>
+        <div class="corner top-right"></div>
+        <div class="corner bottom-left"></div>
+        <div class="corner bottom-right"></div>
+
+        <!-- Color labels -->
+        <div class="color-label" id="red-label">Red</div>
+        <div class="color-label" id="green-label">Green</div>
+        <div class="color-label" id="blue-label">Blue</div>
+
+        <div id="alignment-display">
+            <span class="instructions">Drag layers to align</span><br>
+            <span class="percentage">0% ALIGNED</span>
+        </div>
+        
+        <div id="red-layer" class="layer" data-original-x="0" data-original-y="0">
+            RGB
+            <div class="registration-marks">
+                <div class="reg-mark top-left"><div class="circle"></div></div>
+                <div class="reg-mark top-right"><div class="circle"></div></div>
+                <div class="reg-mark bottom-left"><div class="circle"></div></div>
+                <div class="reg-mark bottom-right"><div class="circle"></div></div>
+            </div>
+        </div>
+        <div id="green-layer" class="layer" data-original-x="0" data-original-y="0">
+            RGB
+            <div class="registration-marks">
+                <div class="reg-mark top-left"><div class="circle"></div></div>
+                <div class="reg-mark top-right"><div class="circle"></div></div>
+                <div class="reg-mark bottom-left"><div class="circle"></div></div>
+                <div class="reg-mark bottom-right"><div class="circle"></div></div>
+            </div>
+        </div>
+        <div id="blue-layer" class="layer" data-original-x="0" data-original-y="0">
+            RGB
+            <div class="registration-marks">
+                <div class="reg-mark top-left"><div class="circle"></div></div>
+                <div class="reg-mark top-right"><div class="circle"></div></div>
+                <div class="reg-mark bottom-left"><div class="circle"></div></div>
+                <div class="reg-mark bottom-right"><div class="circle"></div></div>
+            </div>
+        </div>
+
+    </div>
+
+    <script>
+        const redLayer = document.getElementById('red-layer');
+        const greenLayer = document.getElementById('green-layer');
+        const blueLayer = document.getElementById('blue-layer');
+        const alignmentDisplay = document.getElementById('alignment-display');
+        const percentageSpan = alignmentDisplay.querySelector('.percentage');
+        
+        const layers = [redLayer, greenLayer, blueLayer];
+        
+        // Initial offset positions (misaligned start state)
+        const initialOffsets = [
+            { x: -80, y: -60 },  // Red
+            { x: 60, y: -40 },   // Green
+            { x: -40, y: 80 }    // Blue
+        ];
+
+        // Set initial positions
+        layers.forEach((layer, index) => {
+            const offset = initialOffsets[index];
+            layer.style.transform = `translate(calc(-50% + ${offset.x}px), calc(-50% + ${offset.y}px))`;
+            layer.dataset.offsetX = offset.x;
+            layer.dataset.offsetY = offset.y;
+        });
+
+        // Dragging state
+        let activeLayer = null;
+        let startX = 0;
+        let startY = 0;
+        let startOffsetX = 0;
+        let startOffsetY = 0;
+
+        // Mouse/touch event handlers
+        function handleStart(e, layer) {
+            activeLayer = layer;
+            
+            const clientX = e.type.includes('touch') ? e.touches[0].clientX : e.clientX;
+            const clientY = e.type.includes('touch') ? e.touches[0].clientY : e.clientY;
+            
+            startX = clientX;
+            startY = clientY;
+            startOffsetX = parseFloat(layer.dataset.offsetX) || 0;
+            startOffsetY = parseFloat(layer.dataset.offsetY) || 0;
+            
+            layer.style.cursor = 'grabbing';
+            e.preventDefault();
+        }
+
+        function handleMove(e) {
+            if (!activeLayer) return;
+            
+            const clientX = e.type.includes('touch') ? e.touches[0].clientX : e.clientX;
+            const clientY = e.type.includes('touch') ? e.touches[0].clientY : e.clientY;
+            
+            const deltaX = clientX - startX;
+            const deltaY = clientY - startY;
+            
+            const newOffsetX = startOffsetX + deltaX;
+            const newOffsetY = startOffsetY + deltaY;
+            
+            activeLayer.style.transform = `translate(calc(-50% + ${newOffsetX}px), calc(-50% + ${newOffsetY}px))`;
+            activeLayer.dataset.offsetX = newOffsetX;
+            activeLayer.dataset.offsetY = newOffsetY;
+            
+            updateAlignment();
+            e.preventDefault();
+        }
+
+        function handleEnd(e) {
+            if (activeLayer) {
+                activeLayer.style.cursor = 'move';
+                activeLayer = null;
+            }
+        }
+
+        // Add event listeners to all layers
+        layers.forEach(layer => {
+            layer.addEventListener('mousedown', (e) => handleStart(e, layer));
+            layer.addEventListener('touchstart', (e) => handleStart(e, layer));
+        });
+
+        document.addEventListener('mousemove', handleMove);
+        document.addEventListener('touchmove', handleMove, { passive: false });
+        document.addEventListener('mouseup', handleEnd);
+        document.addEventListener('touchend', handleEnd);
+
+        // Calculate alignment percentage
+        function updateAlignment() {
+            const positions = layers.map(layer => ({
+                x: parseFloat(layer.dataset.offsetX) || 0,
+                y: parseFloat(layer.dataset.offsetY) || 0
+            }));
+
+            // Calculate average position (center point)
+            const avgX = positions.reduce((sum, pos) => sum + pos.x, 0) / positions.length;
+            const avgY = positions.reduce((sum, pos) => sum + pos.y, 0) / positions.length;
+
+            // Calculate distances from center
+            const distances = positions.map(pos => 
+                Math.sqrt(Math.pow(pos.x - avgX, 2) + Math.pow(pos.y - avgY, 2))
+            );
+
+            const maxDistance = distances.reduce((max, dist) => Math.max(max, dist), 0);
+
+            // Maximum expected misalignment (based on initial offsets)
+            const maxPossibleDistance = 120;
+
+            // Calculate alignment percentage (inverse of distance)
+            const alignmentPercent = Math.max(0, Math.min(100, 
+                100 - (maxDistance / maxPossibleDistance * 100)
+            ));
+
+            const roundedPercent = Math.round(alignmentPercent);
+            
+            if (roundedPercent >= 95) {
+                percentageSpan.textContent = '100% IN REGISTER';
+                alignmentDisplay.classList.add('perfect');
+            } else {
+                percentageSpan.textContent = `${roundedPercent}% ALIGNED`;
+                alignmentDisplay.classList.remove('perfect');
+            }
+        }
+
+        // Initial alignment calculation
+        updateAlignment();
+    </script>
+</body>
+</html>
